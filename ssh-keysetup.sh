@@ -48,7 +48,7 @@ if [ ! -f "$USER_KEY_PATH" ]; then
 fi
 
 echo "Pushing user key to $REMOTE_HOST..."
-ssh-copy-id -i "${USER_KEY_PATH}.pub" -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST"
+ssh-copy-id -i "${USER_KEY_PATH}.pub" -p "$REMOTE_PORT" -s "$REMOTE_USER@$REMOTE_HOST"
 
 update_ssh_config "$HOME/.ssh/config" "$REMOTE_ALIAS" "$REMOTE_HOST" "$REMOTE_USER" "$REMOTE_PORT" "$USER_KEY_PATH" ""
 
