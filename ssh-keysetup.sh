@@ -8,7 +8,7 @@ set -e
 REMOTE_ALIAS="${1:-trailer}"           # Default: trailer
 REMOTE_USER="${2:-your_username}"      # Default: your_username
 REMOTE_HOST="${3:-192.168.1.100}"      # Default: 192.168.1.100
-REMOTE_PORT="${4:-22}"                 # Default: 22
+REMOTE_PORT="${4:-23}"                 # Default: 23 (Storage Box SFTP/SSH port)
 
 USER_KEY_PATH="$HOME/.ssh/id_ed25519_$REMOTE_ALIAS"
 ROOT_KEY_PATH="/root/.ssh/id_ed25519_$REMOTE_ALIAS"
@@ -47,10 +47,12 @@ if [ ! -f "$USER_KEY_PATH" ]; then
     ssh-keygen -t ed25519 -f "$USER_KEY_PATH" -N ""
 fi
 
-echo "Pushing user key to $REMOTE_HOST..."
-ssh-copy-id -i "${USER_KEY_PATH}.pub" -p "$REMOTE_PORT" -s "$REMOTE_USER@$REMOTE_HOST"
-
+# Update SSH config BEFORE pushing the key so the local system knows how to connect
 update_ssh_config "$HOME/.ssh/config" "$REMOTE_ALIAS" "$REMOTE_HOST" "$REMOTE_USER" "$REMOTE_PORT" "$USER_KEY_PATH" ""
+
+echo "Pushing user key to $REMOTE_HOST (requires password)..."
+# Storage Box requires "-s" for sftp-only/restricted shells
+ssh-copy-id -s -i "${USER_KEY_PATH}.pub" -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST"
 
 # 2. Setup for Root (Required for systemd services)
 echo "Setting up dedicated root key for systemd services..."
@@ -62,10 +64,11 @@ if ! sudo [ -f "$ROOT_KEY_PATH" ]; then
     sudo ssh-keygen -t ed25519 -f "$ROOT_KEY_PATH" -N ""
 fi
 
-echo "Pushing root key to $REMOTE_HOST..."
-# Use user's existing access to push root's public key
-sudo cat "${ROOT_KEY_PATH}.pub" | ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
-
+# Update root SSH config so root can use the alias
 update_ssh_config "/root/.ssh/config" "$REMOTE_ALIAS" "$REMOTE_HOST" "$REMOTE_USER" "$REMOTE_PORT" "$ROOT_KEY_PATH" "sudo"
+
+echo "Pushing root key to $REMOTE_HOST (may require password)..."
+# Use ssh-copy-id -s for root as well, as manual redirection is forbidden
+sudo ssh-copy-id -s -i "${ROOT_KEY_PATH}.pub" -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST"
 
 echo "Success! Both you and systemd services (root) can now connect via: ssh $REMOTE_ALIAS"
