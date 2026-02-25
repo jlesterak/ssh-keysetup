@@ -52,7 +52,7 @@ update_ssh_config "$HOME/.ssh/config" "$REMOTE_ALIAS" "$REMOTE_HOST" "$REMOTE_US
 
 echo "Pushing user key to $REMOTE_HOST (requires password)..."
 # Storage Box requires "-s" for sftp-only/restricted shells
-ssh-copy-id -s -i "${USER_KEY_PATH}.pub" -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST"
+ssh-copy-id -s -f -i "${USER_KEY_PATH}.pub" -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST"
 
 # 2. Setup for Root (Required for systemd services)
 echo "Setting up dedicated root key for systemd services..."
@@ -69,6 +69,6 @@ update_ssh_config "/root/.ssh/config" "$REMOTE_ALIAS" "$REMOTE_HOST" "$REMOTE_US
 
 echo "Pushing root key to $REMOTE_HOST (may require password)..."
 # Use ssh-copy-id -s for root as well, as manual redirection is forbidden
-sudo ssh-copy-id -s -i "${ROOT_KEY_PATH}.pub" -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST"
+sudo ssh-copy-id -s -f -i "${ROOT_KEY_PATH}.pub" -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST"
 
 echo "Success! Both you and systemd services (root) can now connect via: ssh $REMOTE_ALIAS"
