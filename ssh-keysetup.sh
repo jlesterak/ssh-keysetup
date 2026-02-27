@@ -51,8 +51,8 @@ fi
 update_ssh_config "$HOME/.ssh/config" "$REMOTE_ALIAS" "$REMOTE_HOST" "$REMOTE_USER" "$REMOTE_PORT" "$USER_KEY_PATH" ""
 
 echo "Pushing user key to $REMOTE_HOST (requires password)..."
-# Storage Box requires "-s" for sftp-only/restricted shells
-ssh-copy-id -f -s -i "${USER_KEY_PATH}.pub" -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST"
+# Using manual injection for compatibility (e.g., QNAP NAS)
+cat "${USER_KEY_PATH}.pub" | ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 
 # 2. Setup for Root (Required for systemd services)
 echo "Setting up dedicated root key for systemd services..."
@@ -68,7 +68,7 @@ fi
 update_ssh_config "/root/.ssh/config" "$REMOTE_ALIAS" "$REMOTE_HOST" "$REMOTE_USER" "$REMOTE_PORT" "$ROOT_KEY_PATH" "sudo"
 
 echo "Pushing root key to $REMOTE_HOST (may require password)..."
-# Use ssh-copy-id -s for root as well, as manual redirection is forbidden
-sudo ssh-copy-id -f -s -i "${ROOT_KEY_PATH}.pub" -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST"
+# Using manual injection for compatibility (e.g., QNAP NAS)
+sudo cat "${ROOT_KEY_PATH}.pub" | ssh -p "$REMOTE_PORT" "$REMOTE_USER@$REMOTE_HOST" "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 
 echo "Success! Both you and systemd services (root) can now connect via: ssh $REMOTE_ALIAS"
